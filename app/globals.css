@@ -1,0 +1,39 @@
+/* Base styles + app shell + auth screens. Feature styles live in muse-features.css. */
+*,*::before,*::after{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,rgba(152,117,255,.14),transparent),#101014;color:#fff;font-family:var(--font-sans),system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{line-height:1.2;margin:0}h1{font-size:clamp(1.6rem,3vw,2.2rem)}h2{font-size:1.25rem}h3{font-size:1.05rem}
+a{color:inherit}img{max-width:100%}
+.m-logo{font-weight:800;letter-spacing:.18em;font-size:1.25rem;text-decoration:none;background:linear-gradient(90deg,#9875FF,#C5A5FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Auth */
+.m-auth{min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
+.m-auth__card{width:min(440px,100%);background:#181820;border:1px solid #30303B;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.m-auth--wide .m-auth__card{width:min(720px,100%)}.m-auth__card p{margin:0}
+.m-progress{width:100%;height:8px;accent-color:#9875FF}
+/* Shell */
+.m-shell{display:grid;grid-template-columns:248px 1fr;min-height:100dvh}
+.m-shell__main{min-width:0}
+.m-sidebar{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;gap:20px;padding:20px 14px;background:#14141a;border-right:1px solid #30303B}
+.m-sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.m-nav__link{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;color:#A5A5B5;text-decoration:none;transition:background 160ms ease,color 160ms ease}
+.m-nav__link:hover{background:#20202A;color:#fff}.m-nav__link[aria-current=page]{background:#20202A;color:#fff;box-shadow:inset 3px 0 0 #9875FF}
+.m-nav__icon{width:20px;text-align:center}
+.m-sidebar__me{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.m-sidebar__me span.m-clamp1{flex:1;min-width:0}
+.m-topbar,.m-bottomnav{display:none}
+@media (max-width:768px){
+  .m-shell{grid-template-columns:1fr}.m-sidebar{display:none}
+  .m-topbar{display:flex;position:sticky;top:0;z-index:20;justify-content:space-between;align-items:center;padding:8px 14px calc(8px);padding-top:calc(8px + env(safe-area-inset-top));background:rgba(16,16,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid #30303B}
+  .m-bottomnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(24,24,32,.92);backdrop-filter:blur(12px);border-top:1px solid #30303B;padding-bottom:env(safe-area-inset-bottom)}
+  .m-bottomnav .m-nav__link{flex-direction:column;gap:2px;justify-content:center;padding:6px 2px;min-height:56px;border-radius:0;font-size:.7rem;box-shadow:none!important}
+  .m-bottomnav .m-nav__link[aria-current=page]{color:#C5A5FF;background:none}
+}
+/* Landing */
+.m-hero{max-width:960px;margin:0 auto;padding:72px 20px 96px;display:flex;flex-direction:column;gap:24px;align-items:flex-start}
+.m-hero h1{font-size:var(--text-2xl);background:var(--gradient-accent);-webkit-background-clip:text;background-clip:text;color:transparent}
+.m-hero__sub{font-size:1.1rem;max-width:620px;margin:0}
+.m-hero__points{list-style:none;padding:0;margin:16px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;width:100%}
+.m-hero__points li{background:var(--color-card);border:var(--border);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:6px}
+.m-hero__points span{color:var(--color-text-muted)}
+/* Design reference */
+.m-swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.m-swatch{border:var(--border);border-radius:var(--radius-md);overflow:hidden;font-size:var(--text-sm)}.m-swatch i{display:block;height:56px}.m-swatch span{display:block;padding:8px;color:var(--color-text-muted)}
