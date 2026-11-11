@@ -108,3 +108,27 @@ progress::-moz-progress-bar{background:var(--gradient-accent);border-radius:99px
 .m-hero__cta .m-btn--primary{min-height:52px;padding:0 28px;font-size:1.05rem}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* ===================== v2: interactive glow, animated borders, celebration ===================== */
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(520px circle at var(--px,50%) var(--py,25%),rgba(152,117,255,.11),transparent 60%)}
+.m-card{position:relative}
+.m-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(152,117,255,.17),transparent 70%)}
+.m-card:hover::after{opacity:1}
+.m-auth__card,.m-hero__points li{position:relative}
+.m-auth__card::before,.m-dialog::before,.m-hero__points li::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:conic-gradient(from var(--a),#9875FF,#ff9be6,#5b8cff,#9875FF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:m-spin-a 6s linear infinite}
+.m-hero__points li::before{opacity:0;transition:opacity .3s}.m-hero__points li:hover::before{opacity:1}
+@keyframes m-spin-a{to{--a:360deg}}
+.m-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:-1}
+.m-orbs i{position:absolute;border-radius:50%;filter:blur(50px);opacity:.45;animation:m-float 14s ease-in-out infinite alternate}
+.m-orbs i:nth-child(1){width:280px;height:280px;background:#9875FF;top:6%;left:-4%}
+.m-orbs i:nth-child(2){width:220px;height:220px;background:#ff6bd6;top:38%;right:-3%;opacity:.28;animation-delay:-4s}
+.m-orbs i:nth-child(3){width:260px;height:260px;background:#5b8cff;bottom:4%;left:32%;opacity:.28;animation-delay:-8s}
+@keyframes m-float{to{transform:translate3d(30px,-40px,0) scale(1.15)}}
+.m-hero__cta .m-btn--primary{animation:m-glow 2.6s ease-in-out infinite}
+@keyframes m-glow{50%{box-shadow:0 10px 42px rgba(152,117,255,.8)}}
+.m-confetti{position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden}
+.m-confetti i{position:absolute;top:-20px;border-radius:2px;animation:m-fall linear forwards}
+@keyframes m-fall{to{transform:translate(var(--dx),110vh) rotate(var(--rot))}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

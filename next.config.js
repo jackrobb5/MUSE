@@ -9,6 +9,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   `img-src 'self' data: blob: https://${supa}`,
+  `media-src 'self' blob: https://${supa}`,
   `connect-src 'self' https://${supa} wss://${supa}`,
   // Only the four music providers we embed (see lib/embed.js). Add Stripe here when you build payments.
   'frame-src https://open.spotify.com https://www.youtube-nocookie.com https://w.soundcloud.com https://embed.music.apple.com',

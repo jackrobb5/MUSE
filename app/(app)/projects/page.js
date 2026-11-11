@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { State } from '@/components/ui';
+import { confetti } from '@/lib/confetti';
 import { PROJECT_STATUS } from '@/lib/labels';
 
 export default function ProjectsPage() {
@@ -29,6 +30,7 @@ export default function ProjectsPage() {
     const { data, error } = await sb.from('projects').insert({ title: form.title.trim(), description: form.description.trim() || null, creator_id: user.id }).select('id').single();
     setCreating(false);
     if (error) return setErr(error.message);
+    confetti();
     router.push(`/projects/${data.id}`);
   }
 

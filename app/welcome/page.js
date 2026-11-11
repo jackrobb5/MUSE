@@ -20,6 +20,7 @@ export default function Welcome() {
         <li><strong>Collaborate</strong><span>Post opportunities, send requests and agree how you’ll work together.</span></li>
         <li><strong>Create</strong><span>Message, share references and manage projects from idea to release.</span></li>
       </ul>
+      <div className="m-orbs" aria-hidden="true"><i /><i /><i /></div>
     </main>
   );
 }

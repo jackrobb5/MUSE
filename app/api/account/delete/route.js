@@ -18,6 +18,13 @@ export async function POST(req) {
     const { data: files } = await admin.storage.from(bucket).list(user.id);
     if (files?.length) await admin.storage.from(bucket).remove(files.map((f) => `${user.id}/${f.name}`));
   }
+  // Remove project files this user uploaded or that live in projects they own (the rows cascade, the stored objects don't)
+  const { data: owned } = await admin.from('projects').select('id').eq('creator_id', user.id);
+  const ownedIds = (owned || []).map((r) => r.id);
+  let fq = admin.from('project_files').select('path');
+  fq = ownedIds.length ? fq.or(`uploaded_by.eq.${user.id},project_id.in.(${ownedIds.join(',')})`) : fq.eq('uploaded_by', user.id);
+  const { data: pf } = await fq;
+  if (pf?.length) await admin.storage.from('project-files').remove(pf.map((r) => r.path));
   // Deleting the auth user cascades to profiles and everything referencing it.
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return NextResponse.json({ error: 'Couldn’t delete your account. Try again.' }, { status: 500 });

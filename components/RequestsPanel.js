@@ -7,6 +7,7 @@ import { Avatar, State } from './ui';
 import MusicEmbed from './MusicEmbed';
 import { COMP, WORK } from '@/lib/labels';
 import { timeAgo } from '@/lib/format';
+import { confetti } from '@/lib/confetti';
 
 const SELECT = '*, sender:profiles!sender_id(username,display_name,avatar_url), recipient:profiles!recipient_id(username,display_name,avatar_url), collaborations(title), musical_roles(name), genres(name)';
 
@@ -32,9 +33,9 @@ export default function RequestsPanel() {
     setErr('');
     if (then) then(data); else load();
   }
-  const respond = (r, status) => act(sb.rpc('respond_to_request', { p_id: r.id, p_status: status, p_response: reply[r.id] || null }));
+  const respond = (r, status) => act(sb.rpc('respond_to_request', { p_id: r.id, p_status: status, p_response: reply[r.id] || null }), () => { if (status === 'accepted') confetti(); load(); });
   const withdraw = (r) => act(sb.rpc('withdraw_request', { p_id: r.id }));
-  const toProject = (r) => act(sb.rpc('create_project_from_request', { p_request: r.id }), (pid) => router.push(`/projects/${pid}`));
+  const toProject = (r) => act(sb.rpc('create_project_from_request', { p_request: r.id }), (pid) => { confetti(); router.push(`/projects/${pid}`); });
 
   const incoming = rows?.filter((r) => r.recipient_id === me) || [];
   const outgoing = rows?.filter((r) => r.sender_id === me) || [];

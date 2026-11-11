@@ -6,6 +6,7 @@ import { useTaxonomy } from '@/lib/useTaxonomy';
 import ChipSelect from '@/components/ChipSelect';
 import { Avatar, State } from '@/components/ui';
 import { isSafeHttpUrl } from '@/lib/embed';
+import { confetti } from '@/lib/confetti';
 import { AVAILABILITY, EXPERIENCE, WORK } from '@/lib/labels';
 
 const STEPS = ['About you', 'Your music', 'Collaboration'];
@@ -80,7 +81,7 @@ export default function Onboarding() {
     if (ok && step === STEPS.length - 1) {
       const { error } = await sb.from('profiles').update({ onboarded: true }).eq('id', uid);
       if (error) { setBusy(false); return setErr(error.message); }
-      router.push('/'); router.refresh(); return;
+      confetti(); router.push('/'); router.refresh(); return;
     }
     setBusy(false);
     if (ok) setStep(step + 1);

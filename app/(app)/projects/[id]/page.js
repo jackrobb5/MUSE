@@ -1,15 +1,18 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import { Avatar, CopyrightNotice, State } from '@/components/ui';
 import MusicEmbed from '@/components/MusicEmbed';
+import ProjectRoleSelect from '@/components/ProjectRoleSelect';
 import { isSafeHttpUrl } from '@/lib/embed';
 import { PROJECT_STATUS } from '@/lib/labels';
-import { timeAgo } from '@/lib/format';
+import { formatBytes, timeAgo } from '@/lib/format';
+import { ACCEPT, checkFile, kindOf, safeName } from '@/lib/files';
 
-const TABS = ['Updates', 'Links', 'Notes', 'Agreed terms', 'People'];
+const TABS = ['Updates', 'Links', 'Files', 'Notes', 'Agreed terms', 'People'];
+const BUCKET = 'project-files';
 const byNewest = (a, b) => new Date(b.created_at) - new Date(a.created_at);
 
 function AddForm({ placeholder, onSubmit, rows = 3, button = 'Post', type = 'text' }) {
@@ -21,6 +24,84 @@ function AddForm({ placeholder, onSubmit, rows = 3, button = 'Post', type = 'tex
         : <input aria-label={placeholder} placeholder={placeholder} type={type} value={v} onChange={(e) => setV(e.target.value)} maxLength={500} />}
       <button className="m-btn m-btn--primary" disabled={!v.trim()}>{button}</button>
     </form>
+  );
+}
+
+function Uploader({ projectId, me, onDone, onError }) {
+  const sb = supabaseBrowser();
+  const input = useRef(null);
+  const [busy, setBusy] = useState('');
+  const [over, setOver] = useState(false);
+
+  async function upload(files) {
+    onError('');
+    for (const file of [...files]) {
+      const c = checkFile(file);
+      if (c.error) { onError(c.error); continue; }
+      setBusy(`Uploading ${file.name}…`);
+      const path = `${projectId}/${crypto.randomUUID()}-${safeName(file.name)}`;
+      const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: c.type, upsert: false });
+      if (error) { onError(`${file.name}: ${error.message}`); continue; }
+      const { error: e2 } = await sb.from('project_files').insert({ project_id: projectId, uploaded_by: me, name: file.name.slice(0, 200), path, mime_type: c.type, size_bytes: file.size });
+      if (e2) { await sb.storage.from(BUCKET).remove([path]); onError(`${file.name}: ${e2.message}`); }
+    }
+    setBusy('');
+    onDone();
+  }
+  return (
+    <div className={`m-drop${over ? ' is-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={() => setOver(false)}
+      onDrop={(e) => { e.preventDefault(); setOver(false); upload(e.dataTransfer.files); }}>
+      <p><strong>Drag files here</strong> or <button type="button" className="m-link-btn" onClick={() => input.current?.click()}>browse your computer</button></p>
+      <p className="m-muted">MP4, MOV, WEBM, MP3, WAV, M4A, FLAC, OGG, MIDI, images, PDF, ZIP, TXT · up to 50 MB each</p>
+      <input ref={input} type="file" multiple accept={ACCEPT} hidden onChange={(e) => { upload(e.target.files); e.target.value = ''; }} />
+      {busy && <p role="status" className="m-muted"><span className="m-spinner" aria-hidden="true" /> {busy}</p>}
+    </div>
+  );
+}
+
+function FileRow({ f, me, isOwner, onChanged, onError }) {
+  const sb = supabaseBrowser();
+  const [url, setUrl] = useState(null);
+  const kind = kindOf(f.mime_type);
+  const canDelete = f.uploaded_by === me || isOwner;
+
+  async function sign(download) {
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(f.path, 3600, download ? { download: f.name } : undefined);
+    if (error) { onError(error.message); return null; }
+    return data.signedUrl;
+  }
+  async function preview() {
+    if (url) return setUrl(null);
+    const u = await sign(false);
+    if (!u) return;
+    if (f.mime_type === 'application/pdf') window.open(u, '_blank', 'noopener'); else setUrl(u);
+  }
+  async function download() {
+    const u = await sign(true);
+    if (!u) return;
+    const a = document.createElement('a'); a.href = u; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove();
+  }
+  async function remove() {
+    if (!confirm(`Delete “${f.name}”?`)) return;
+    const { error } = await sb.storage.from(BUCKET).remove([f.path]);
+    if (error) return onError(error.message);
+    const { error: e2 } = await sb.from('project_files').delete().eq('id', f.id);
+    if (e2) onError(e2.message); else onChanged();
+  }
+  const canPreview = ['video', 'audio', 'image'].includes(kind) || f.mime_type === 'application/pdf';
+  return (
+    <article className="m-card">
+      <div className="m-collab__by"><strong className="m-clamp1">{f.name}</strong><span className="m-chip">{kind === 'file' ? (f.name.split('.').pop() || 'file').toUpperCase() : kind}</span></div>
+      <p className="m-muted">{formatBytes(f.size_bytes)} · {f.uploader?.display_name} · {timeAgo(f.created_at)}</p>
+      {url && kind === 'video' && <video className="m-media" src={url} controls preload="metadata" playsInline />}
+      {url && kind === 'audio' && <audio className="m-media" src={url} controls preload="metadata" />}
+      {url && kind === 'image' && <img className="m-media" src={url} alt={f.name} />}
+      <div className="m-actions">
+        {canPreview && <button className="m-btn m-btn--ghost" onClick={preview}>{url ? 'Hide' : f.mime_type === 'application/pdf' ? 'Open' : 'Preview'}</button>}
+        <button className="m-btn m-btn--ghost" onClick={download}>Download</button>
+        {canDelete && <button className="m-btn m-btn--ghost" onClick={remove}>Delete</button>}
+      </div>
+    </article>
   );
 }
 
@@ -42,6 +123,7 @@ export default function ProjectPage() {
       project_members(user_id,role,profile:profiles!user_id(username,display_name,avatar_url)),
       project_updates(id,content,created_at,author:profiles!author_id(display_name,username)),
       project_links(id,url,label,added_by,created_at),
+      project_files(id,name,path,mime_type,size_bytes,uploaded_by,created_at,uploader:profiles!uploaded_by(display_name)),
       project_notes(id,kind,content,created_at,author_id,author:profiles!author_id(display_name))`).eq('id', id).maybeSingle();
     if (error) setErr(error.message); else if (!data) setErr('Project not found, or you aren’t a member.'); else setP(data);
   }, [id]);
@@ -53,6 +135,12 @@ export default function ProjectPage() {
     setErr(''); setMsg(ok); load(); return true;
   }
   const isOwner = p?.creator_id === me;
+  async function deleteProject() {
+    if (!confirm('Delete this project and its files for everyone? This can’t be undone.')) return;
+    const paths = (p.project_files || []).map((f) => f.path);
+    if (paths.length) await sb.storage.from(BUCKET).remove(paths);
+    run(sb.from('projects').delete().eq('id', id)).then((ok) => ok && router.push('/projects'));
+  }
   const patch = (fields) => run(sb.from('projects').update(fields).eq('id', id));
 
   async function inviteUser(e) {
@@ -79,7 +167,7 @@ export default function ProjectPage() {
                 <input type="range" min="0" max="100" step="5" value={p.progress} disabled={!isOwner} onChange={(e) => setP({ ...p, progress: Number(e.target.value) })} onMouseUp={(e) => patch({ progress: Number(e.target.value) })} onTouchEnd={(e) => patch({ progress: Number(e.target.value) })} onKeyUp={(e) => patch({ progress: Number(e.target.value) })} /></label>
             </div>
             {isOwner && p.status !== 'completed' && <button className="m-btn m-btn--ghost" onClick={() => patch({ status: 'completed', progress: 100 })}>Mark complete</button>}
-            {isOwner && <button className="m-btn m-btn--ghost" onClick={() => { if (confirm('Delete this project for everyone? This can’t be undone.')) run(sb.from('projects').delete().eq('id', id)).then((ok) => ok && router.push('/projects')); }}>Delete project</button>}
+            {isOwner && <button className="m-btn m-btn--ghost" onClick={deleteProject}>Delete project</button>}
           </header>
           {err && <p role="alert" className="m-error">{err}</p>}
           {msg && <p role="status" className="m-muted">{msg}</p>}
@@ -98,6 +186,13 @@ export default function ProjectPage() {
             {p.project_links.length === 0 && <p className="m-muted">Share references, stems folders or demos here.</p>}
             {[...p.project_links].sort(byNewest).map((l) => <div key={l.id} className="m-card"><MusicEmbed url={l.url} title={l.label} />
               {(l.added_by === me || isOwner) && <button className="m-btn m-btn--ghost" onClick={() => run(sb.from('project_links').delete().eq('id', l.id))}>Remove</button>}</div>)}
+          </section>}
+
+          {tab === 'Files' && <section className="m-stack">
+            <Uploader projectId={id} me={me} onDone={load} onError={setErr} />
+            <p className="m-notice">Only upload music and files you have the right to share. Files are private to this project’s members.</p>
+            {p.project_files.length === 0 && <p className="m-muted">No files yet. Share demos, stems, mixes, videos or references.</p>}
+            {[...p.project_files].sort(byNewest).map((f) => <FileRow key={f.id} f={f} me={me} isOwner={isOwner} onChanged={load} onError={setErr} />)}
           </section>}
 
           {['Notes', 'Agreed terms'].includes(tab) && (() => {
@@ -119,7 +214,9 @@ export default function ProjectPage() {
             {p.project_members.map((m) => (
               <div key={m.user_id} className="m-card m-collab__by">
                 <Avatar url={m.profile?.avatar_url} name={m.profile?.display_name} size={40} />
-                <Link href={`/profile/${m.profile?.username}`}>{m.profile?.display_name}</Link><span className="m-chip">{m.role}</span>
+                <Link href={`/profile/${m.profile?.username}`}>{m.profile?.display_name}</Link>{isOwner && m.user_id !== me
+                  ? <ProjectRoleSelect label="Role" value={m.role} onChange={(role) => run(sb.from('project_members').update({ role }).match({ project_id: id, user_id: m.user_id }), 'Role updated.')} />
+                  : <span className="m-chip">{m.role}</span>}
                 {isOwner && m.user_id !== me && <button className="m-btn m-btn--ghost" onClick={() => run(sb.from('project_members').delete().match({ project_id: id, user_id: m.user_id }), 'Collaborator removed.')}>Remove</button>}
                 {!isOwner && m.user_id === me && <button className="m-btn m-btn--ghost" onClick={() => { if (confirm('Leave this project?')) run(sb.from('project_members').delete().match({ project_id: id, user_id: me })).then((ok) => ok && router.push('/projects')); }}>Leave</button>}
               </div>))}
@@ -128,7 +225,7 @@ export default function ProjectPage() {
                 <h3>Add a collaborator</h3>
                 <div className="m-row">
                   <label className="m-field">Username<input value={invite.username} onChange={(e) => setInvite({ ...invite, username: e.target.value })} required /></label>
-                  <label className="m-field">Their role<input value={invite.role} onChange={(e) => setInvite({ ...invite, role: e.target.value })} maxLength={60} /></label>
+                  <ProjectRoleSelect value={invite.role} onChange={(role) => setInvite({ ...invite, role })} />
                   <button className="m-btn m-btn--primary">Add</button>
                 </div>
               </form>)}

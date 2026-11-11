@@ -3,6 +3,7 @@ import './tokens.css';
 import './globals.css';
 import './muse-features.css';
 import './muse-polish.css';
+import UiEffects from '@/components/UiEffects';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-sans' });
 
@@ -13,5 +14,5 @@ export const metadata = {
 export const viewport = { themeColor: '#101014', width: 'device-width', initialScale: 1 };
 
 export default function RootLayout({ children }) {
-  return (<html lang="en" className={inter.variable}><body>{children}</body></html>);
+  return (<html lang="en" className={inter.variable}><body>{children}<UiEffects /></body></html>);
 }
