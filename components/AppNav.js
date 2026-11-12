@@ -7,7 +7,7 @@ import { Avatar } from './ui';
 import NotificationBadge from './NotificationBadge';
 
 // Swap the glyphs for your icon set (e.g. lucide-react) if you prefer.
-const ITEMS = [['/', 'Home', '⌂'], ['/discover', 'Discover', '◎'], ['/collaborations', 'Collaborations', '✦'], ['/messages', 'Messages', '✉'],
+const ITEMS = [['/', 'Home', '⌂'], ['/discover', 'Discover', '◎'], ['/collaborations', 'Collaborations', '✦'], ['/messages', 'Messages', '✉'], ['/friends', 'Friends', '☻'],
   ['/projects', 'My Projects', '♫'], ['/notifications', 'Notifications', '◔'], ['/profile', 'My Profile', '☺'], ['/settings', 'Settings', '⚙']];
 const MOBILE = ['/', '/discover', '/collaborations', '/messages', '/projects'];
 

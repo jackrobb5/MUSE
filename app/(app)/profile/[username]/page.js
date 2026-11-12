@@ -4,6 +4,7 @@ import { supabaseServer } from '@/lib/supabase/server';
 import { Avatar, CopyrightNotice } from '@/components/ui';
 import MusicEmbed from '@/components/MusicEmbed';
 import ProfileActions from '@/components/ProfileActions';
+import ProfileMedia from '@/components/ProfileMedia';
 import { isSafeHttpUrl } from '@/lib/embed';
 import { AVAILABILITY, EXPERIENCE, WORK } from '@/lib/labels';
 
@@ -45,7 +46,7 @@ export default async function ProfilePage({ params }) {
           <p className="m-muted">@{p.username}{where && ` · ${where}`}</p>
         </div>
         {isMe
-          ? <Link className="m-btn m-btn--primary" href="/profile/edit">Edit profile</Link>
+          ? <div className="m-actions"><Link className="m-btn m-btn--primary" href="/profile/edit">Edit profile</Link><Link className="m-btn m-btn--ghost" href="/friends">Friends</Link><Link className="m-btn m-btn--ghost" href="/samples">My samples</Link></div>
           : <ProfileActions artistId={p.id} displayName={p.display_name} saved={!!fav} />}
       </header>
 
@@ -73,6 +74,8 @@ export default async function ProfilePage({ params }) {
           ? <p className="m-muted">{isMe ? 'Add Spotify, SoundCloud, YouTube or Apple Music links in Edit profile.' : 'No music added yet.'}</p>
           : <div className="m-stack">{portfolio.map((l, i) => <MusicEmbed key={i} url={l.url} title={l.title} />)}</div>}
       </section>
+
+      <ProfileMedia userId={p.id} isMe={isMe} />
 
       <section className="m-card">
         <h2>Activity</h2>

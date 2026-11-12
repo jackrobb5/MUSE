@@ -6,6 +6,7 @@ import { supabaseBrowser } from '@/lib/supabase/client';
 import { Avatar, CopyrightNotice, State } from '@/components/ui';
 import MusicEmbed from '@/components/MusicEmbed';
 import ProjectRoleSelect from '@/components/ProjectRoleSelect';
+import PublishPanel from '@/components/PublishPanel';
 import { isSafeHttpUrl } from '@/lib/embed';
 import { PROJECT_STATUS } from '@/lib/labels';
 import { formatBytes, timeAgo } from '@/lib/format';
@@ -169,6 +170,7 @@ export default function ProjectPage() {
             {isOwner && p.status !== 'completed' && <button className="m-btn m-btn--ghost" onClick={() => patch({ status: 'completed', progress: 100 })}>Mark complete</button>}
             {isOwner && <button className="m-btn m-btn--ghost" onClick={deleteProject}>Delete project</button>}
           </header>
+          <PublishPanel project={p} files={p.project_files} isOwner={isOwner} />
           {err && <p role="alert" className="m-error">{err}</p>}
           {msg && <p role="status" className="m-muted">{msg}</p>}
 

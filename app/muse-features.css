@@ -67,3 +67,7 @@ button.m-chip{cursor:pointer;min-height:36px}.m-chip[aria-pressed=true],.m-chip-
 .m-drop p{margin:0}.m-drop.is-over{border-color:var(--m-accent);background:rgba(152,117,255,.1)}
 .m-link-btn{background:none;border:0;padding:0;color:var(--m-accent2);font:inherit;text-decoration:underline;cursor:pointer}
 .m-media{width:100%;max-height:420px;border-radius:12px;background:#000}audio.m-media{background:none;max-height:none}
+
+/* Discover: samples, releases, friends */
+.m-player{display:flex;flex-direction:column;gap:8px}.m-tracklist{display:flex;flex-direction:column;gap:8px}
+.m-release .m-collab__top h3,.m-sample .m-collab__top h3{overflow-wrap:anywhere}

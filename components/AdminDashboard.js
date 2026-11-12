@@ -6,6 +6,7 @@ import { State } from './ui';
 import { stripFilterChars, timeAgo } from '@/lib/format';
 
 const TABS = ['Stats', 'Users', 'Reports', 'Listings', 'Categories'];
+const ACTIONS = { profile: ['Suspend account', 'Suspend this account?'], collaboration: ['Remove listing', 'Delete this listing?'], release: ['Unpublish', 'Take this published project off Discover?'], sample: ['Remove sample', 'Delete this sample permanently?'] };
 const sb = () => supabaseBrowser();
 
 export default function AdminDashboard() {
@@ -71,7 +72,15 @@ function Reports() {
   async function resolve(r, status) {
     const { data: { user } } = await sb().auth.getUser();
     if (status === 'actioned') {
-      const op = r.target_type === 'profile' ? sb().from('profiles').update({ is_suspended: true }).eq('id', r.target_id) : sb().from('collaborations').delete().eq('id', r.target_id);
+      let op;
+      if (r.target_type === 'profile') op = sb().from('profiles').update({ is_suspended: true }).eq('id', r.target_id);
+      else if (r.target_type === 'collaboration') op = sb().from('collaborations').delete().eq('id', r.target_id);
+      else if (r.target_type === 'release') op = sb().from('releases').delete().eq('id', r.target_id);
+      else {   // sample: remove the stored file, then the row
+        const { data: s } = await sb().from('samples').select('file_path').eq('id', r.target_id).maybeSingle();
+        if (s) await sb().storage.from('samples').remove([s.file_path]);
+        op = sb().from('samples').delete().eq('id', r.target_id);
+      }
       const { error } = await op; if (error) return setErr(error.message);
     }
     const { error } = await sb().from('reports').update({ status, reviewed_by: user.id }).eq('id', r.id);
@@ -85,10 +94,12 @@ function Reports() {
           <article key={r.id} className="m-card">
             <p><strong>{r.reason}</strong> · {r.target_type} · reported by @{r.reporter?.username} · {timeAgo(r.created_at)}</p>
             {r.details && <p className="m-prewrap">{r.details}</p>}
-            <p>{r.target_type === 'profile' ? (names[r.target_id] ? <Link className="m-link" href={`/profile/${names[r.target_id]}`}>View @{names[r.target_id]}</Link> : 'Profile unavailable') : <Link className="m-link" href={`/collaborations/${r.target_id}`}>View listing</Link>}</p>
+            <p>{r.target_type === 'profile' ? (names[r.target_id] ? <Link className="m-link" href={`/profile/${names[r.target_id]}`}>View @{names[r.target_id]}</Link> : 'Profile unavailable')
+              : r.target_type === 'collaboration' ? <Link className="m-link" href={`/collaborations/${r.target_id}`}>View listing</Link>
+              : <Link className="m-link" href={`/discover?tab=${r.target_type === 'release' ? 'releases' : 'samples'}`}>Find it on Discover</Link>}</p>
             <div className="m-actions">
               <button className="m-btn m-btn--ghost" onClick={() => resolve(r, 'dismissed')}>Dismiss</button>
-              <button className="m-btn m-btn--primary" onClick={() => confirm(r.target_type === 'profile' ? 'Suspend this account?' : 'Delete this listing?') && resolve(r, 'actioned')}>{r.target_type === 'profile' ? 'Suspend account' : 'Remove listing'}</button>
+              <button className="m-btn m-btn--primary" onClick={() => confirm(ACTIONS[r.target_type][1]) && resolve(r, 'actioned')}>{ACTIONS[r.target_type][0]}</button>
             </div>
           </article>))}
       </State>

@@ -67,6 +67,23 @@ select _t_count('select 1 from notifications', 1, 'recipient got a message notif
 select _t_affected($$update collaboration_requests set status = 'accepted'$$, 0, 'status cannot be changed by direct UPDATE');
 select _t_logout();
 
+-- Samples: Public vs Friends-only
+insert into public.samples (id, owner_id, title, visibility, file_path, mime_type, size_bytes, rights_confirmed) values
+  ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-00000000000a', 'Public clip', 'public', '00000000-0000-0000-0000-00000000000a/p.mp3', 'audio/mpeg', 1000, true),
+  ('00000000-0000-0000-0000-0000000000f2', '00000000-0000-0000-0000-00000000000a', 'Friends clip', 'friends', '00000000-0000-0000-0000-00000000000a/f.mp3', 'audio/mpeg', 1000, true);
+select _t_login('00000000-0000-0000-0000-00000000000c');
+select _t_count('select 1 from samples', 1, 'non-friend sees only the public sample');
+select _t_count($$select 1 where public.can_view_sample_media('00000000-0000-0000-0000-00000000000a/f.mp3')$$, 0, 'non-friend cannot get access to friends-only media');
+select _t_count($$select 1 where public.can_view_sample_media('00000000-0000-0000-0000-00000000000a/p.mp3')$$, 1, 'anyone can access public media');
+select _t_logout();
+insert into public.friendships (user_a, user_b, requested_by, status) values ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000a', 'accepted');
+select _t_login('00000000-0000-0000-0000-00000000000b');
+select _t_count('select 1 from samples', 2, 'friend sees friends-only samples too');
+select _t_count($$select 1 where public.can_view_sample_media('00000000-0000-0000-0000-00000000000a/f.mp3')$$, 1, 'friend can access friends-only media');
+select _t_affected($$update samples set visibility = 'public' where id = '00000000-0000-0000-0000-0000000000f2'$$, 0, 'only the owner can change visibility');
+select _t_denied($$insert into friendships (user_a, user_b, requested_by, status) values ('00000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000c', '00000000-0000-0000-0000-00000000000b', 'accepted')$$, 'friendships cannot be forged directly');
+select _t_logout();
+
 -- Blocking: A blocks B, then B can no longer message A.
 insert into public.blocks (blocker_id, blocked_id) values ('00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b');
 select _t_login('00000000-0000-0000-0000-00000000000b');

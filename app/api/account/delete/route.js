@@ -14,7 +14,7 @@ export async function POST(req) {
   if (body.confirm !== 'DELETE') return NextResponse.json({ error: 'Confirmation missing' }, { status: 400 });
 
   const admin = supabaseAdmin();
-  for (const bucket of ['avatars', 'covers']) {
+  for (const bucket of ['avatars', 'covers', 'samples']) {
     const { data: files } = await admin.storage.from(bucket).list(user.id);
     if (files?.length) await admin.storage.from(bucket).remove(files.map((f) => `${user.id}/${f.name}`));
   }

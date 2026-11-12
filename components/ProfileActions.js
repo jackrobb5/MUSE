@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
 import RequestDialog from './RequestDialog';
 import SafetyMenu from './SafetyMenu';
+import FriendButton from './FriendButton';
 
 export default function ProfileActions({ artistId, displayName, saved: initialSaved }) {
   const sb = supabaseBrowser();
@@ -34,6 +35,7 @@ export default function ProfileActions({ artistId, displayName, saved: initialSa
         <button className="m-btn m-btn--primary" onClick={() => setOpen(true)}>Request collaboration</button>
         <a className="m-btn m-btn--ghost" href="#music">View music</a>
         <button className="m-btn m-btn--ghost" aria-pressed={saved} onClick={toggleSave}>{saved ? 'Saved' : 'Save artist'}</button>
+        <FriendButton otherId={artistId} />
         <SafetyMenu targetType="profile" targetId={artistId} blockUserId={artistId} />
       </div>
       {msg && <p role="status" className="m-muted">{msg}</p>}
