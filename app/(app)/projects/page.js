@@ -27,6 +27,8 @@ export default function ProjectsPage() {
     if (!form.title.trim()) return setErr('Give your project a name.');
     setCreating(true);
     const { data: { user } } = await sb.auth.getUser();
+    console.log("USER ID:", user.id);
+console.log("AUTH SESSION:", (await sb.auth.getSession()).data.session?.user?.id);
     const { data, error } = await sb.from('projects').insert({ title: form.title.trim(), description: form.description.trim() || null, creator_id: user.id }).select('id').single();
     setCreating(false);
     if (error) return setErr(error.message);
